@@ -24,6 +24,7 @@ app.get('/todos/:id', function (req, res) {
         res.status(404).send();
     }
 })
+
 app.post('/todos', function (req, res) {
     var body = _.pick(req.body, 'description', 'completed')
     if (!_.isString(body.description) || !_.isBoolean(body.completed) || body.description.trim().length === 0) {
@@ -47,6 +48,32 @@ app.delete('/todos/:id', function (req, res) {
         res.status(404).json('error: todo id not found');
     }
 
+})
+
+app.put('/todos/:id', function (req, res) {
+    var todoid = parseInt(req.params.id, 10)
+    var matchtodo = _.findWhere(todos, {
+        id: todoid
+    })
+     var body = _.pick(req.body, 'description', 'completed')
+     var validattributes = {};
+    if (!matchtodo) {
+        res.send(404).send();
+    }
+    
+   
+    if (body.hasOwnProperty('completed') && _.isBoolean(body.completed)) {
+            validattributes.completed = body.completed;
+        } else if (body.hasOwnProperty('completed')) {
+            res.send(400).send();
+        }
+        if (body.hasOwnProperty('description') && _.isString(body.description) && body.description.trim().length > 0) {
+        validattributes.description = body.description;
+    } else if (body.hasOwnProperty('description')) {
+        res.send(400).send();
+    }
+    _.extend(matchtodo, validattributes)
+    res.json(matchtodo)
 })
 app.listen(PORT, function () {
     console.log('server running on ' + PORT)
