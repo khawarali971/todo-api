@@ -10,7 +10,19 @@ app.get('/', function (req, res) {
     res.send('Todo API Root')
 })
 app.get('/todos', function (req, res) {
-    res.json(todos)
+    var filteredtools = todos;
+    var queryparams = req.query;
+    if (queryparams.hasOwnProperty('completed') && queryparams.completed === 'true') {
+        filteredtools = _.where(filteredtools, {
+            completed: true
+        })
+
+    } else if (queryparams.hasOwnProperty('completed') && queryparams.completed === 'false') {
+        filteredtools = _.where(filteredtools, {
+            completed: false
+        })
+    }
+    res.json(filteredtools)
 })
 app.get('/todos/:id', function (req, res) {
     var todoid = parseInt(req.params.id, 10);
@@ -55,19 +67,19 @@ app.put('/todos/:id', function (req, res) {
     var matchtodo = _.findWhere(todos, {
         id: todoid
     })
-     var body = _.pick(req.body, 'description', 'completed')
-     var validattributes = {};
+    var body = _.pick(req.body, 'description', 'completed')
+    var validattributes = {};
     if (!matchtodo) {
         res.send(404).send();
     }
-    
-   
+
+
     if (body.hasOwnProperty('completed') && _.isBoolean(body.completed)) {
-            validattributes.completed = body.completed;
-        } else if (body.hasOwnProperty('completed')) {
-            res.send(400).send();
-        }
-        if (body.hasOwnProperty('description') && _.isString(body.description) && body.description.trim().length > 0) {
+        validattributes.completed = body.completed;
+    } else if (body.hasOwnProperty('completed')) {
+        res.send(400).send();
+    }
+    if (body.hasOwnProperty('description') && _.isString(body.description) && body.description.trim().length > 0) {
         validattributes.description = body.description;
     } else if (body.hasOwnProperty('description')) {
         res.send(400).send();
