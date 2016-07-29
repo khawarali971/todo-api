@@ -11,7 +11,27 @@ app.get('/', function (req, res) {
     res.send('Todo API Root')
 })
 app.get('/todos', function (req, res) {
-    var filteredtools = todos;
+    var query = req.query;
+    var where = {};
+    if (query.hasOwnProperty('completed') && query.completed === 'true'){
+        where.completed = true
+    }  
+    else if (query.hasOwnProperty('completed') && query.completed === 'false'){
+        where.completed = false
+    } 
+    if (query.hasOwnProperty('q') && query.q.length > 0) {
+        where.description = {
+            $like: '%' + query.q + '%'
+        }
+        }
+    db.todo.findAll({
+                where: where
+                }).then(function(todos){
+      res.json(todos)
+        }, function (e) {
+            res.status(500).json(e)
+        })
+    /*var filteredtools = todos;
     var queryparams = req.query;
     if (queryparams.hasOwnProperty('completed') && queryparams.completed === 'true') {
         filteredtools = _.where(filteredtools, {
@@ -28,7 +48,7 @@ app.get('/todos', function (req, res) {
             return todo.description.toLowerCase().indexOf(queryparams.q.toLowerCase()) > -1;
         })
     }
-    res.json(filteredtools)
+    res.json(filteredtools)*/
 })
 app.get('/todos/:id', function (req, res) {
     var todoid = parseInt(req.params.id, 10);
