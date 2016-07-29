@@ -1,6 +1,7 @@
 var express = require('express')
 var bodyparser = require('body-parser')
 var _ = require('underscore')
+var db = require('./db.js')
 var app = express();
 var PORT = process.env.PORT || 3000;
 var todos = []
@@ -44,13 +45,20 @@ app.get('/todos/:id', function (req, res) {
 
 app.post('/todos', function (req, res) {
     var body = _.pick(req.body, 'description', 'completed')
-    if (!_.isString(body.description) || !_.isBoolean(body.completed) || body.description.trim().length === 0) {
-        return res.status(400).send();
-    }
-    body.description = body.description.trim()
-    body.id = todoNextId++
-        todos.push(body)
-    res.json(body)
+    db.todo.create(body).then(function (todo) {
+            res.json(todo.toJSON())
+        }, function (e) {
+            res.status(404).json(e)
+        }).catch(function(e){
+        console.log(e)
+    })
+        /*if (!_.isString(body.description) || !_.isBoolean(body.completed) || body.description.trim().length === 0) {
+            return res.status(400).send();
+        }
+        body.description = body.description.trim()
+        body.id = todoNextId++
+            todos.push(body)
+        res.json(body)*/
 })
 app.delete('/todos/:id', function (req, res) {
     var todoid = parseInt(req.params.id, 10);
@@ -92,6 +100,9 @@ app.put('/todos/:id', function (req, res) {
     _.extend(matchtodo, validattributes)
     res.json(matchtodo)
 })
-app.listen(PORT, function () {
-    console.log('server running on ' + PORT)
+db.sequalize.sync().then(function () {
+    app.listen(PORT, function () {
+        console.log('server running on ' + PORT)
+    })
+
 })
