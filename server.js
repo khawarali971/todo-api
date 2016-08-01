@@ -123,7 +123,7 @@ app.post('/users/login', function (req, res) {
     })
 
 })
-db.sequalize.sync({force: true}).then(function () {
+db.sequalize.sync().then(function () {
     app.listen(PORT, function () {
         console.log('server running on ' + PORT)
     })
