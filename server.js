@@ -1,17 +1,20 @@
 var express = require('express')
 var bcrypt = require('bcrypt-nodejs')
 var bodyparser = require('body-parser')
+
 var _ = require('underscore')
 var db = require('./db.js')
 var app = express();
+var middleware = require('./middleware.js')(db);
 var PORT = process.env.PORT || 3000;
+
 var todos = []
 var todoNextId = 1
 app.use(bodyparser.json());
 app.get('/', function (req, res) {
     res.send('Todo API Root')
 })
-app.get('/todos', function (req, res) {
+app.get('/todos', middleware.requireAuthentication, function (req, res) {
     var query = req.query;
     var where = {};
     if (query.hasOwnProperty('completed') && query.completed === 'true') {
@@ -33,7 +36,7 @@ app.get('/todos', function (req, res) {
     })
 
 })
-app.get('/todos/:id', function (req, res) {
+app.get('/todos/:id', middleware.requireAuthentication, function (req, res) {
     var todoid = parseInt(req.params.id, 10);
     db.todo.findById(todoid).then(function (todo) {
         if (!!todo) {
@@ -47,7 +50,7 @@ app.get('/todos/:id', function (req, res) {
 
 })
 
-app.post('/todos', function (req, res) {
+app.post('/todos', middleware.requireAuthentication, function (req, res) {
     var body = _.pick(req.body, 'description', 'completed')
     db.todo.create(body).then(function (todo) {
         res.json(todo.toJSON())
@@ -58,17 +61,8 @@ app.post('/todos', function (req, res) {
     })
 
 })
-app.post('/users', function (req, res) {
-    var body = _.pick(req.body, 'email', 'password')
-    db.user.create(body).then(function (user) {
-        res.json(user.toPublicJSON())
-    }, function (e) {
-        res.status(404).json(e)
-    }).catch(function (e) {
-        console.log(e)
-    })
-})
-app.delete('/todos/:id', function (req, res) {
+
+app.delete('/todos/:id', middleware.requireAuthentication, function (req, res) {
     var todoid = parseInt(req.params.id, 10);
     db.todo.destroy({
         where: {
@@ -86,7 +80,7 @@ app.delete('/todos/:id', function (req, res) {
 
 })
 
-app.put('/todos/:id', function (req, res) {
+app.put('/todos/:id', middleware.requireAuthentication, function (req, res) {
     var todoid = parseInt(req.params.id, 10)
 
     var body = _.pick(req.body, 'description', 'completed')
@@ -111,6 +105,16 @@ app.put('/todos/:id', function (req, res) {
         }
     }, function () {
         res.status(500).send()
+    })
+})
+app.post('/users', function (req, res) {
+    var body = _.pick(req.body, 'email', 'password')
+    db.user.create(body).then(function (user) {
+        res.json(user.toPublicJSON())
+    }, function (e) {
+        res.status(404).json(e)
+    }).catch(function (e) {
+        console.log(e)
     })
 })
 app.post('/users/login', function (req, res) {
