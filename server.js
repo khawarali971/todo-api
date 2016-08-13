@@ -135,22 +135,31 @@ app.post('/users', function (req, res) {
         console.log(e)
     })
 })
+app.delete('/users/login', middleware.requireAuthentication, function (req, res){
+    req.token.destroy().then(function(){
+        res.status(200).send()
+    }).catch( function () {
+        res.status(500).send()
+    })
+})
 app.post('/users/login', function (req, res) {
     var body = _.pick(req.body, 'email', 'password')
-
+    var userInstance;
     db.user.authenticate(body).then(function (user) {
         var token = user.generateToken('authentication');
-        if (token) {
-            res.header('Auth', token).json(user.toPublicJSON())
-        } else {
-            res.status(401).send()
-        }
-    }, function () {
+        userInstance = user;
+        return db.token.create({
+            token : token
+        })
+       
+    }).then(function(tokenInstance){
+        res.header('Auth', tokenInstance.get('token')).json(userInstance.toPublicJSON())
+    }).catch( function () {
         res.status(401).send()
     })
 
 })
-db.sequalize.sync({ force: true}).then(function () {
+db.sequalize.sync().then(function () {
     app.listen(PORT, function () {
         console.log('server running on ' + PORT)
     })
